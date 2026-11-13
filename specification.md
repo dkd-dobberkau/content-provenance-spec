@@ -14,6 +14,7 @@ This is a working draft of an open, CMS-agnostic specification that lets automat
 | The content hash is carried in the Record as `contentHash`; the signature covers the canonical Record | One signature then binds text and Record, and the Record stays self-describing |
 | Records may contain integers only, no fractional numbers | Removes the hardest part of JCS number serialisation and a common source of mismatches |
 | Test vectors and a reference implementation are published in the conformance repository | Implementations can prove they compute the same bytes |
+| Section 3.3 defines how Facts appear in the Record, the Document and as Web Annotations; the vocabulary gains `claim`, `subject`, `predicate`, `object`, `evidence`, `confidence`, `validUntil` | A reference implementation of Layer 3 exists and the shape needed to be fixed |
 | Section 3.4 lists the defined sub-paths of the Audit Endpoint; Section 10 adds the IANA registration of the well-known URI suffix | RFC 8615 asks for well-known names to be registered, and implementations need a fixed path layout |
 
 ### Changes in Draft 0.2
@@ -91,6 +92,23 @@ A Document MAY expose individual Facts as separately addressable units. A Fact h
 - An optional confidence or recency annotation.
 
 Facts MUST be embedded in the Document and SHOULD also be exposed as Web Annotations (a W3C Recommendation) at the Audit Endpoint.
+
+**Representation.** In the Record, Facts are listed under `claim`, each as an object of type `Claim` with:
+
+| Property | Content |
+| --- | --- |
+| `@id` | The Fact URI, `{Document URL}#fact-{id}` |
+| `text` | The exact quoted words in the Document |
+| `subject` | URI of what the Fact is about |
+| `predicate` | URI of the property stated; a bare term is read as a schema.org term |
+| `object` | The value: a string, or `{"@id": URI}` |
+| `evidence` | Optional URI of a source supporting the Fact |
+| `confidence` | Optional: `measured`, `estimated` or `asserted` |
+| `validFrom`, `validUntil` | Optional dates bounding the validity of the Fact |
+
+In the Document body, the quoted words SHOULD be wrapped in an element with the id `fact-{id}`, so the Fact URI resolves to them. Such wrapping MUST NOT change the canonical text (Annex A.2). Because the `claim` list is part of the Record, a signature covers the Facts.
+
+At `/.well-known/content-provenance/facts/{id}`, a Fact is a W3C Web Annotation with motivation `describing`, the structured statement as its body and the Document as its target, selected by a `FragmentSelector` (`fact-{id}`) and a `TextQuoteSelector` with the quoted words. The TextQuoteSelector keeps a Fact identifiable when the fragment element is missing.
 
 ### 3.4 Layer 4: Audit Endpoint
 

@@ -16,6 +16,14 @@
     "algorithm": { "@id": "cps:algorithm" },
     "signatureValue": { "@id": "cps:signatureValue" },
     "keyId": { "@id": "cps:keyId" },
-    "key": { "@id": "cps:key", "@type": "@id" }
+    "key": { "@id": "cps:key", "@type": "@id" },
+
+    "claim": { "@id": "cps:claim" },
+    "subject": { "@id": "cps:subject", "@type": "@id" },
+    "predicate": { "@id": "cps:predicate", "@type": "@id" },
+    "object": { "@id": "cps:object" },
+    "evidence": { "@id": "cps:evidence", "@type": "@id" },
+    "confidence": { "@id": "cps:confidence" },
+    "validUntil": { "@id": "cps:validUntil", "@type": "xsd:date" }
   }
 }
