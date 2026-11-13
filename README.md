@@ -16,7 +16,8 @@ draft, not stable. Expect breaking changes before 1.0.
 | 3 Fact-level addressing | Individually addressable claims | L4 Citable (with 4) |
 | 4 Audit Endpoint | `/.well-known/content-provenance` | L4 Citable (with 3) |
 
-Vocabulary namespace: `https://cms-provenance.org/ns/v1`
+Vocabulary namespace: [`https://cms-provenance.org/ns/v1`](https://cms-provenance.org/ns/v1)
+(JSON-LD context: [`vocabulary/v1/context.jsonld`](vocabulary/v1/context.jsonld))
 
 ## Implementations
 

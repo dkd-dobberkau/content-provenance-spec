@@ -1,0 +1,18 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    "cps": "https://cms-provenance.org/ns/v1#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "lastSubstantiveRevision": { "@id": "cps:lastSubstantiveRevision", "@type": "xsd:dateTime" },
+    "maintainedDate": { "@id": "cps:maintainedDate", "@type": "xsd:dateTime" },
+    "accessDate": { "@id": "cps:accessDate", "@type": "xsd:date" },
+    "cpsConformance": { "@id": "cps:cpsConformance", "@type": "xsd:integer" },
+    "generator": { "@id": "cps:generator" },
+    "specVersion": { "@id": "cps:specVersion" },
+    "signature": { "@id": "cps:signature" },
+    "keyId": { "@id": "cps:keyId" },
+    "key": { "@id": "cps:key", "@type": "@id" }
+  }
+}
