@@ -24,6 +24,13 @@ with test vectors and a reference implementation in the
 Vocabulary namespace: [`https://cms-provenance.org/ns/v1`](https://cms-provenance.org/ns/v1)
 (JSON-LD context: [`vocabulary/v1/context.jsonld`](vocabulary/v1/context.jsonld))
 
+## Well-known URI
+
+The Audit Endpoint lives at `/.well-known/content-provenance` (Section 3.4).
+Its registration with IANA is prepared in
+[`iana/well-known-registration.md`](iana/well-known-registration.md) and has
+not been filed yet.
+
 ## Implementations
 
 - **TYPO3** (reference, in development):

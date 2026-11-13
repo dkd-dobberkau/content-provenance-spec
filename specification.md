@@ -14,6 +14,7 @@ This is a working draft of an open, CMS-agnostic specification that lets automat
 | The content hash is carried in the Record as `contentHash`; the signature covers the canonical Record | One signature then binds text and Record, and the Record stays self-describing |
 | Records may contain integers only, no fractional numbers | Removes the hardest part of JCS number serialisation and a common source of mismatches |
 | Test vectors and a reference implementation are published in the conformance repository | Implementations can prove they compute the same bytes |
+| Section 3.4 lists the defined sub-paths of the Audit Endpoint; Section 10 adds the IANA registration of the well-known URI suffix | RFC 8615 asks for well-known names to be registered, and implementations need a fixed path layout |
 
 ### Changes in Draft 0.2
 
@@ -102,6 +103,17 @@ Every implementing site MUST expose an Audit Endpoint at `/.well-known/content-p
 
 The Endpoint MAY expose Facts as Web Annotations under `/.well-known/content-provenance/facts`.
 
+The following paths below `/.well-known/content-provenance` are defined. Other sub-paths are reserved for future versions of this specification; implementations MUST NOT define their own.
+
+| Path | Content |
+| --- | --- |
+| `/.well-known/content-provenance` | The Audit Endpoint listing; further pages through Link headers |
+| `/.well-known/content-provenance/keys` | All Site Keys, including retired ones, as JWK (RFC 7517, RFC 8037) |
+| `/.well-known/content-provenance/keys/{keyId}` | One Site Key; the target of a Record's `key` |
+| `/.well-known/content-provenance/facts/{factId}` | One Fact as a Web Annotation (Layer 3) |
+
+All of these resources MUST be readable without authentication by the auditors the publisher admits (Section 7) and SHOULD allow cross-origin reads (`Access-Control-Allow-Origin: *`), so that browser-based verifiers work.
+
 ## 4 Conformance levels
 
 A site conforms at one of four levels and claims it with a `cpsConformance` field in the Audit Endpoint and in each Provenance Record.
@@ -156,6 +168,20 @@ The TYPO3 reference implementation is the extension family [`provenance`](https:
 ## 9 Versioning
 
 This specification follows semantic versioning. A breaking change increments the major version. The Audit Endpoint declares the implemented version in a `specVersion` field.
+
+## 10 IANA considerations
+
+This specification registers the following entry in the "Well-Known URIs" registry established by RFC 8615:
+
+| Field | Value |
+| --- | --- |
+| URI suffix | `content-provenance` |
+| Change controller | Content Provenance Specification maintainers, contact <hello@cms-provenance.org>. Change control is intended to move to the neutral body that takes over stewardship (see Status). |
+| Specification document(s) | This document, Section 3.4 and Section 10 |
+| Status | provisional |
+| Related information | Sub-paths are defined in Section 3.4. The suffix is used by the Audit Endpoint, the Site Key documents and Fact annotations of the Content Provenance Specification. |
+
+The status is provisional while the specification is a draft. It will be changed to permanent with version 1.0.
 
 ## Annex A: Canonicalisation and signing (normative)
 
