@@ -12,6 +12,8 @@ This is a working draft of an open, CMS-agnostic specification that lets automat
 | --- | --- |
 | Section 3.4 defines the representation of the Audit Endpoint listing, its Document entries and the key resources | Implementations and verifiers need the same field names; until now they were fixed only by the reference implementation |
 | URLs published in Records and at the Audit Endpoint MUST be absolute | A relative site base produced relative key URLs that verifiers could not resolve |
+| Section 3.1 defines the JSON-LD representation of a Record and when it is complete | L2 requires a complete Record, which could not be checked without field names |
+| Section 4 states testable requirements for every level, makes levels cumulative and per Document, and forbids claiming a level that is not reached | Implementations claimed levels from configuration rather than from what a Document actually offers |
 
 ### Changes in Draft 0.3
 
@@ -75,6 +77,24 @@ Every published Document MUST carry a Provenance Record containing at least:
 - The CMS that produced the Record, by name and version.
 
 Records MUST be exposed in the Document as JSON-LD using schema.org plus the namespace in Section 6. They MAY also be exposed as Microdata or RDFa.
+
+**Representation.** In JSON-LD, a Record is an object with:
+
+| Property | Content |
+| --- | --- |
+| `@context` | `["https://schema.org", "https://cms-provenance.org/ns/v1"]` |
+| `@type` | A schema.org type of creative work, such as `WebPage` or `Article` |
+| `@id` | The stable Document identifier, a URI such as a `urn:uuid` |
+| `author` | One or more objects of type `Person`, each with an `@id` that is the author's URI; `name` is optional |
+| `datePublished` | The first publication timestamp |
+| `lastSubstantiveRevision` | The last substantive revision timestamp |
+| `maintainedDate` | Optional, see above |
+| `reviewedBy` | Optional, an object of type `Person` with an `@id` |
+| `citation` | The sources, each an object with `url`, `name` (the human-readable description) and `accessDate` (a date); MAY be omitted when there are none |
+| `generator` | The CMS and its version |
+| `cpsConformance` | The level the Document reaches (Section 4) |
+
+Layers 2 and 3 add `contentHash`, `key`, `signature` and `claim`. A Record is **complete** when it has every member of this table that is not marked optional. Timestamps are date-times and dates as defined in RFC 3339.
 
 ### 3.2 Layer 2: Signature
 
@@ -183,10 +203,12 @@ A site conforms at one of four levels and claims it with a `cpsConformance` fiel
 
 | Level | Name | Requires |
 | --- | --- | --- |
-| L1 | Discoverable | Sitemap, clean HTML, canonical URLs, basic schema.org (roughly today's SEO baseline) |
-| L2 | Provenance | Layer 1: every Document has a complete Provenance Record |
-| L3 | Verifiable | Layers 1 and 2: Records are signed |
-| L4 | Citable | Layers 1 to 4: Facts are addressable and the Audit Endpoint is live |
+| L1 | Discoverable | Roughly today's SEO baseline: the Document is listed in an XML sitemap ([sitemaps.org](https://www.sitemaps.org/protocol.html)) at `/sitemap.xml` or named in `/robots.txt`, names its canonical URL with an absolute `<link rel="canonical">`, and carries schema.org metadata as JSON-LD |
+| L2 | Provenance | Layer 1: the Document has a complete Provenance Record (Section 3.1) |
+| L3 | Verifiable | Layers 1 and 2: the Record is signed and verifies (Annex A.5.2) |
+| L4 | Citable | Layers 1 to 4: the Audit Endpoint conforms to Section 3.4 and lists the Document, and every Fact the Record lists conforms to Section 3.3. A Document without Facts can reach L4 |
+
+Levels are cumulative: a Document reaches a level only if it also meets every lower one. A Record MUST NOT claim a higher level than its Document reaches; a Record that is not complete claims at most L1. The Audit Endpoint claims the lowest level among the Documents it lists.
 
 ## 5 Relationship to existing standards
 
