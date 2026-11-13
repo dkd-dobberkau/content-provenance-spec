@@ -6,6 +6,13 @@ November 13, 2026 · Olivier Dobberkau
 
 This is a working draft of an open, CMS-agnostic specification that lets automated agents verify who published a piece of web content, when, and on what sources.
 
+### Changes since Draft 0.4 (unreleased)
+
+| Change | Reason |
+| --- | --- |
+| The MX crosswalk (Section 5.1) no longer treats `generator` and `provenanceOrigin` as equivalent | In the current MX Provenance note `provenanceOrigin` states how content was created, not which system produced it |
+| Section 5.2 lists MX fields without a CPS counterpart | The MX drafts gained fields since Draft 0.2 that overlap with CPS; they are named as open questions rather than adopted silently |
+
 ### Changes in Draft 0.4
 
 | Change | Reason |
@@ -229,9 +236,22 @@ These terms meant different things in CPS and MX, or the same thing under two na
 | --- | --- | --- | --- |
 | `lastSubstantiveRevision` | `maintainedDate` | Similar sounding, different semantics: last real edit vs last confirmation that the content is still accurate | Both kept. CPS adopts `maintainedDate` from MX as an optional Layer 1 field; merging them would lose information |
 | `cpsConformance` (formerly `conformanceLevel`) | `mxCompliance` | Format compliance vs editorial truthfulness must stay separate | Renamed with a `cps` prefix so the two can never be confused |
-| `generator` | `provenanceOrigin` | Naming ambiguity | `generator` kept, following HTML `meta name="generator"` and Atom. `provenanceOrigin` is the MX counterpart; consumers MAY treat them as equivalent |
+| `generator` | `provenanceOrigin` | Different meanings: `generator` names the CMS and its version; `provenanceOrigin` states how the content was created (`human-directed`, `ai-assisted`, `automated-fact-check`) | Not equivalent; consumers MUST NOT treat one as the other. `generator` is kept, following HTML `meta name="generator"` and Atom. CPS has no counterpart to `provenanceOrigin` yet (Section 5.2) |
 
-The crosswalk compared MX against the TYPO3 implementation described in the PRD, not against this specification text. A direct comparison against this document is still to be done.
+The first version of this crosswalk (Draft 0.2) compared MX against the TYPO3 implementation described in the PRD. It was checked against this specification text and the MX drafts as published on 24 October 2026 (MX Provenance note v1.3, MX Core Metadata note, MX Carrier Formats note, MX Contract Fingerprinting and Signing note); that check corrected the `generator` row.
+
+### 5.2 MX fields without a CPS counterpart
+
+These MX fields have no counterpart in this specification. None is adopted yet; each is an open question for a later draft.
+
+| MX field | MX meaning | Relation to CPS |
+| --- | --- | --- |
+| `provenanceOrigin` | How the content was created: `human-directed`, `ai-assisted` or `automated-fact-check` | Fits Layer 1 as an optional Record field; would let a Record disclose AI involvement per Document |
+| `reviewCycle` | How often the content is reviewed (`quarterly`, `on-change` …); with `maintainedDate` it lets agents spot stale content | Complements `maintainedDate`, which CPS already adopts |
+| `provenanceUri`, hosted `.mxprov.json` record | Link to a separate record of the parties, regulatory frameworks and steps behind a document, aimed at AI governance | Different scope from the CPS Record, which states authorship, dates and sources and is signed with the text. A CPS Record could link such a record; the two are not merged |
+| `canonicalUri`, `summary`, `conformsTo`, `trainingDataPolicy` | The four fields MX requires at its Level 2, carried in HTML as `<meta name="mx:…">` | `canonicalUri` equals the Document URL, `conformsTo` can name this specification. `summary` and `trainingDataPolicy` have no CPS source. Emitting them is a CMS matter, not part of the Record or its signature |
+
+MX signs contracts over a fingerprint of its own (canonical JSON, SHA-256; signature algorithm left open). It has not been compared byte for byte with the canonicalisation in Annex A.
 
 ## 6 Vocabulary
 
