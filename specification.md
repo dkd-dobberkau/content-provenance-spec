@@ -1,10 +1,17 @@
-# Content Provenance Specification – Draft 0.3
+# Content Provenance Specification – Draft 0.4 (in progress)
 
 November 13, 2026 · Olivier Dobberkau
 
 ## Status and changes
 
 This is a working draft of an open, CMS-agnostic specification that lets automated agents verify who published a piece of web content, when, and on what sources.
+
+### Changes in Draft 0.4 (in progress)
+
+| Change | Reason |
+| --- | --- |
+| Section 3.4 defines the representation of the Audit Endpoint listing, its Document entries and the key resources | Implementations and verifiers need the same field names; until now they were fixed only by the reference implementation |
+| URLs published in Records and at the Audit Endpoint MUST be absolute | A relative site base produced relative key URLs that verifiers could not resolve |
 
 ### Changes in Draft 0.3
 
@@ -131,6 +138,44 @@ The following paths below `/.well-known/content-provenance` are defined. Other s
 | `/.well-known/content-provenance/facts/{factId}` | One Fact as a Web Annotation (Layer 3) |
 
 All of these resources MUST be readable without authentication by the auditors the publisher admits (Section 7) and SHOULD allow cross-origin reads (`Access-Control-Allow-Origin: *`), so that browser-based verifiers work.
+
+**Representation.** The listing is a JSON object (`application/json`) with:
+
+| Property | Content |
+| --- | --- |
+| `@context` | `["https://schema.org", "https://cms-provenance.org/ns/v1"]` |
+| `specVersion` | The version of this specification the listing follows, such as `"0.4"` |
+| `generator` | The CMS and its version, as in the Record |
+| `cpsConformance` | The level the site claims (Section 4), an integer from 1 to 4 |
+| `site` | An object with `url`, the site's base URL, and `keys`, the URL of the key list; `keys` is required from L3 |
+| `totalItems` | The number of Documents across all pages |
+| `page`, `pageSize` | The number of this page, counted from 1, and the maximum number of entries per page |
+| `documents` | The Document entries of this page |
+
+Each Document entry has:
+
+| Property | Content |
+| --- | --- |
+| `url` | The Document URL |
+| `@id` | The stable Document identifier, the same as the Record's `@id` |
+| `datePublished`, `lastSubstantiveRevision` | As in the Record |
+| `maintainedDate` | Optional, as in the Record |
+| `cpsConformance` | The level the Document's Record claims |
+| `contentHash`, `signature` | As in the signed Record; required when the Document is signed, absent otherwise. `signature` has `algorithm`, `keyId` and `signatureValue` |
+
+Pages are linked with the relations `next` and `prev` (RFC 8288); `first` and `last` SHOULD be given as well. A page number beyond the last page MUST be answered with status 404.
+
+The key list at `/keys` is a JSON object with one member, `keys`, an array of key entries. The resource `/keys/{keyId}` is a single key entry. A key entry has:
+
+| Property | Content |
+| --- | --- |
+| `keyId` | The identifier used in signatures |
+| `algorithm` | `Ed25519` or `RSA-PSS-SHA256` |
+| `publicKeyJwk` | The public key as a JWK (RFC 7517; RFC 8037 for Ed25519). It MUST NOT contain private key members such as `d` |
+| `createdAt` | When the key was created |
+| `retiredAt` | When the key was retired, or `null` while it is active |
+
+All URLs in the listing, in key entries, in Records (`@id` of Facts, `key`) and in Web Annotations MUST be absolute. All timestamps are date-times as defined in RFC 3339.
 
 ## 4 Conformance levels
 
