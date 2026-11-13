@@ -1,10 +1,23 @@
-# Content Provenance Specification – Draft 0.2
+# Content Provenance Specification – Draft 0.3
 
 November 13, 2026 · Olivier Dobberkau
 
-## Status and changes since Draft 0.1
+## Status and changes
 
-This is a working draft of an open, CMS-agnostic specification that lets automated agents verify who published a piece of web content, when, and on what sources. Draft 0.2 reconstructs Draft 0.1 (May 2026) and folds in the open points raised since.
+This is a working draft of an open, CMS-agnostic specification that lets automated agents verify who published a piece of web content, when, and on what sources.
+
+### Changes in Draft 0.3
+
+| Change | Reason |
+| --- | --- |
+| Annex A defines canonicalisation and signing normatively | Without a fixed algorithm, signatures cannot be checked by third parties |
+| The content hash is carried in the Record as `contentHash`; the signature covers the canonical Record | One signature then binds text and Record, and the Record stays self-describing |
+| Records may contain integers only, no fractional numbers | Removes the hardest part of JCS number serialisation and a common source of mismatches |
+| Test vectors and a reference implementation are published in the conformance repository | Implementations can prove they compute the same bytes |
+
+### Changes in Draft 0.2
+
+Draft 0.2 reconstructed Draft 0.1 (May 2026) and folded in the open points raised since.
 
 | Change | Reason |
 | --- | --- |
@@ -15,7 +28,7 @@ This is a working draft of an open, CMS-agnostic specification that lets automat
 | Terms that collided with MX are resolved | `maintainedDate` adopted alongside `lastSubstantiveRevision`; `conformanceLevel` renamed to `cpsConformance`; `generator` kept, `provenanceOrigin` documented as the MX counterpart (Section 5.1) |
 | Governance is an explicit open question | Vocabulary stewardship currently rests with one person; signing-identity governance is unresolved |
 
-**Status.** Draft 0.2, November 2026. **Maintainers:** to be decided; initial drafting by dkd Internet Service GmbH, intended stewardship through a neutral body (TYPO3 Association, Open Website Alliance or a new working group). **Reference implementation:** TYPO3 first; Drupal, WordPress and Joomla are the stated follow-on goal.
+**Status.** Draft 0.3, November 2026. **Maintainers:** to be decided; initial drafting by dkd Internet Service GmbH, intended stewardship through a neutral body (TYPO3 Association, Open Website Alliance or a new working group). **Reference implementation:** TYPO3 first; Drupal, WordPress and Joomla are the stated follow-on goal.
 
 ## 1 Motivation
 
@@ -58,14 +71,14 @@ Records MUST be exposed in the Document as JSON-LD using schema.org plus the nam
 
 A Provenance Record MAY be signed. If it is, the signature MUST cover a canonical hash of the Document content plus the Provenance Record.
 
-- Hash: SHA-256.
-- Signature: Ed25519 (recommended) or RSA-PSS with SHA-256.
+- Hash: SHA-256 over the canonical text of the Document, carried in the Record as `contentHash` (Annex A.3).
+- Signature: Ed25519 (recommended) or RSA-PSS with SHA-256, over the canonical Record (Annex A.4, A.5). Verifiers MUST support Ed25519.
 - The public part of the Site Key MUST be discoverable through the Audit Endpoint and SHOULD also be linked from a key document at a stable URL via a `key` field.
 - The signature MUST appear both in the Document (as a JSON-LD field) and in the Audit Endpoint entry.
 - Rotation works through a `keyId`; historical public keys stay available at their stable URLs.
 - **New in 0.2:** Verifiers MUST recompute the hash from the canonical form and check the signature against the published key. Reading the signature field is not verification.
 
-The canonicalisation algorithm is defined in Annex A.
+Canonicalisation, signing and verification are defined in Annex A.
 
 ### 3.3 Layer 3: Fact-level addressing
 
@@ -144,13 +157,123 @@ The TYPO3 reference implementation is the extension family [`provenance`](https:
 
 This specification follows semantic versioning. A breaking change increments the major version. The Audit Endpoint declares the implemented version in a `specVersion` field.
 
-## Annex A: Canonicalisation (to be defined in 0.3)
+## Annex A: Canonicalisation and signing (normative)
 
-Working assumption: apply JCS (JSON Canonicalization Scheme, RFC 8785) to the JSON-LD Provenance Record, plus a canonical extraction of the Document text. The text pipeline serialises HTML deterministically, strips presentation markup, keeps structural semantics and normalises invisible characters. External review is planned, ideally from someone with W3C Verifiable Credentials and JCS experience.
+This annex turns a published Document and its Provenance Record into exactly defined bytes, so that any party can recompute the hash and check the signature. A reference implementation and test vectors are published in the [conformance repository](https://github.com/dkd-dobberkau/content-provenance-conformance) (`reference/python`, `vectors/canonicalization`). Where they disagree with this annex, this annex wins.
+
+Overview:
+
+1. Extract the canonical text of the Document (A.2) and hash it into `contentHash` (A.3).
+2. Serialise the Record, including `contentHash` and excluding `signature`, with JCS (A.4).
+3. Sign those bytes; add the `signature` object to the Record (A.5).
+
+### A.1 Input
+
+The input is the HTML of the Document as served at its URL, parsed with the HTML parsing algorithm of the WHATWG HTML Living Standard. Element names are compared by local name, regardless of namespace (SVG and MathML elements live in their own namespaces after parsing). Text is a sequence of Unicode code points.
+
+### A.2 Canonical text
+
+#### A.2.1 Content roots
+
+The content roots are determined as follows, in this order:
+
+1. If any element carries the attribute `data-cps-content`, the content roots are those elements in document order, except elements that are descendants of another such element.
+2. Otherwise, the first `main` element.
+3. Otherwise, the `body` element.
+
+Publishers SHOULD mark the editorial content explicitly with `data-cps-content` or keep navigation, headers and footers outside `main`. Text outside the content roots is not covered by the signature.
+
+#### A.2.2 Excluded subtrees
+
+A walk over a content root skips an element and all its descendants if
+
+- its local name is one of `head`, `script`, `style`, `template`, `noscript`, `iframe`, `object`, `embed`, `canvas`, `svg`, `button`, `input`, `select`, `textarea`; or
+- it carries the attribute `hidden`; or
+- it carries the attribute `aria-hidden` with the value `true` (ASCII case-insensitive); or
+- it carries the attribute `data-cps-ignore`.
+
+Comments and processing instructions are skipped. Publishers SHOULD mark per-request content inside a content root, such as form tokens or personalised greetings, with `data-cps-ignore`.
+
+#### A.2.3 Text extraction
+
+Walk each content root depth-first in document order and build a string:
+
+- Before each content root and after it, emit a line break (U+000A).
+- When entering and when leaving an element whose local name is one of `address`, `article`, `aside`, `blockquote`, `caption`, `dd`, `details`, `dialog`, `div`, `dl`, `dt`, `fieldset`, `figcaption`, `figure`, `footer`, `form`, `h1` to `h6`, `header`, `hgroup`, `hr`, `li`, `main`, `nav`, `ol`, `p`, `pre`, `section`, `summary`, `table`, `tbody`, `td`, `tfoot`, `th`, `thead`, `tr`, `ul`, emit a line break.
+- For a `br` element, emit a line break.
+- For an `img` element, emit the value of its `alt` attribute, if any.
+- For a text node, emit its data. Outside a `pre` element, each U+000A in the data is emitted as U+0020; inside a `pre` element it is emitted unchanged.
+
+Line breaks therefore come from document structure only; how the HTML source is wrapped has no effect.
+
+#### A.2.4 Normalisation
+
+Apply these steps to the extracted string, in order:
+
+1. **Remove invisible and control characters.** Remove every code point in the following ranges. They are the code points of General Category Cf as of Unicode 15.1, frozen here so that the result does not depend on an implementation's Unicode version, plus the C0 and C1 controls not handled in step 3:
+   U+0000–U+0008, U+000E–U+001F, U+007F–U+009F, U+00AD, U+0600–U+0605, U+061C, U+06DD, U+070F, U+0890–U+0891, U+08E2, U+180E, U+200B–U+200F, U+202A–U+202E, U+2060–U+2064, U+2066–U+206F, U+FEFF, U+FFF9–U+FFFB, U+110BD, U+110CD, U+13430–U+1343F, U+1BCA0–U+1BCA3, U+1D173–U+1D17A, U+E0001, U+E0020–U+E007F.
+2. **Compose.** Convert to Unicode Normalization Form C.
+3. **Unify whitespace.** Replace each of U+0009, U+000B, U+000C, U+000D, U+00A0, U+1680, U+2000–U+200A, U+2028, U+2029, U+202F, U+205F, U+3000 with U+0020.
+4. **Collapse.** Split the string at U+000A into lines. In each line, replace every run of U+0020 with a single U+0020 and remove leading and trailing U+0020. Drop empty lines. Join the remaining lines with U+000A. There is no line break at the start or end.
+
+The result is the **canonical text**. Encoded as UTF-8, without byte order mark, it forms the **canonical text bytes**.
+
+Step 1 makes the hash insensitive to invisible bytes injected into content, as required in Section 7.
+
+### A.3 Content hash
+
+`contentHash` is the string `sha256:` followed by the SHA-256 digest of the canonical text bytes, written as 64 lowercase hexadecimal digits. It is a top-level property of the Record.
+
+### A.4 Canonical Record
+
+The **Record** is the JSON-LD object of the Document whose `@context` contains `https://cms-provenance.org/ns/v1`, either as the string value of `@context` or as an element of its array. If a Document contains more than one such object, it is not conformant at L3.
+
+The **canonical Record bytes** are the UTF-8 encoding of the JSON Canonicalization Scheme (RFC 8785) serialisation of the Record after removing its top-level `signature` member. All other members, including `@context` and `contentHash`, are part of the canonical Record.
+
+Records MUST NOT contain numbers other than integers in the range −(2^53−1) to 2^53−1. With that restriction, RFC 8785 reduces to: object members sorted by the UTF-16 code units of their names; no insignificant whitespace; strings escaped only for `"`, `\`, and code points below U+0020 (`\b`, `\f`, `\n`, `\r`, `\t`, otherwise `\u00xx` in lowercase hex); integers in plain decimal notation.
+
+### A.5 Signature
+
+#### A.5.1 Signing
+
+1. Compute `contentHash` (A.3) and set it on the Record.
+2. Compute the canonical Record bytes (A.4).
+3. Sign those bytes with the private Site Key.
+4. Add a top-level member `signature` to the Record:
+
+```json
+"signature": {
+  "algorithm": "Ed25519",
+  "keyId": "site-key-2026-11",
+  "signatureValue": "base64url, no padding"
+}
+```
+
+| `algorithm` | Signing operation |
+| --- | --- |
+| `Ed25519` | Ed25519 as in RFC 8032 (PureEdDSA) over the canonical Record bytes |
+| `RSA-PSS-SHA256` | RSASSA-PSS as in RFC 8017 with SHA-256, MGF1 with SHA-256 and a 32-byte salt, over the canonical Record bytes; keys of at least 3072 bits |
+
+`signatureValue` is the signature encoded in base64url without padding (RFC 4648, Section 5).
+
+#### A.5.2 Verification
+
+A verifier MUST perform all of the following steps. The signature is valid only if every step succeeds.
+
+1. Fetch the Document and find the Record (A.4).
+2. Compute the canonical text of the fetched Document (A.2) and its content hash (A.3). Compare it with the Record's `contentHash`. They MUST be equal.
+3. Resolve the public key for `signature.keyId` through the Audit Endpoint (Section 3.4) or the `key` document. Retired keys remain valid for signatures made before their retirement.
+4. Compute the canonical Record bytes (A.4) and verify `signature.signatureValue` against them with that key and `signature.algorithm`.
+
+A Record that carries a `signature` but fails any step MUST be treated as unsigned, and the Document MUST NOT be reported as conforming at L3 or above.
+
+### A.6 Test vectors
+
+The conformance repository holds vectors under `vectors/canonicalization`. Each vector has an `input.html`, a hand-written `expected-text.txt` with the canonical text, a `record.json`, and an `expected.json` with `contentHash`, the canonical Record, its SHA-256 and the Record signed with the Ed25519 test key from RFC 8032, Section 7.1, TEST 1 (`vectors/keys/test-key.json`). An implementation conforms to this annex if it reproduces every `expected-text.txt` and every value in `expected.json`.
 
 ## Annex B: Open questions
 
-- The exact canonicalisation pipeline (Annex A).
+- Whether Annex A should cover documents other than HTML (PDF, feeds).
 - Reviewer signatures: co-signature on the same Record, or a separate Record type.
 - Whether the Audit Endpoint stays a paginated listing or gains a query interface.
 - How to express a deprecated Document (404, redirect or tombstone Record).

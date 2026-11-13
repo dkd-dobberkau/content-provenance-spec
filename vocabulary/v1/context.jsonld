@@ -11,7 +11,10 @@
     "cpsConformance": { "@id": "cps:cpsConformance", "@type": "xsd:integer" },
     "generator": { "@id": "cps:generator" },
     "specVersion": { "@id": "cps:specVersion" },
+    "contentHash": { "@id": "cps:contentHash" },
     "signature": { "@id": "cps:signature" },
+    "algorithm": { "@id": "cps:algorithm" },
+    "signatureValue": { "@id": "cps:signatureValue" },
     "keyId": { "@id": "cps:keyId" },
     "key": { "@id": "cps:key", "@type": "@id" }
   }
