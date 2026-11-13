@@ -1,4 +1,4 @@
-# Content Provenance Specification – Draft 0.4 (in progress)
+# Content Provenance Specification – Draft 0.4
 
 November 13, 2026 · Olivier Dobberkau
 
@@ -6,7 +6,7 @@ November 13, 2026 · Olivier Dobberkau
 
 This is a working draft of an open, CMS-agnostic specification that lets automated agents verify who published a piece of web content, when, and on what sources.
 
-### Changes in Draft 0.4 (in progress)
+### Changes in Draft 0.4
 
 | Change | Reason |
 | --- | --- |

@@ -13,7 +13,7 @@ decision, not a writing task.
   `Request for well-known URI: content-provenance`.
 - The registry policy is *Specification Required*: a designated expert
   reviews the request. The specification must be stably referenced, hence the
-  tag `draft-0.3` in this repository.
+  tag `draft-0.4` in this repository.
 
 ## Before filing
 
@@ -26,7 +26,7 @@ decision, not a writing task.
    initial authors, the maintainers and hello@cms-provenance.org are named.
    If a neutral body (TYPO3 Association, Open Website Alliance or a new
    working group) takes over first, name it instead.
-3. **Point at a tagged version.** Use the `draft-0.3` URL below, or the tag of
+3. **Point at a tagged version.** Use the `draft-0.4` URL below, or the tag of
    whatever version is current when filing.
 
 ## Issue text
@@ -39,9 +39,9 @@ decision, not a writing task.
 > (contact: hello@cms-provenance.org). Change control is intended to move to
 > a neutral steward as the specification matures.
 >
-> **Specification document(s):** Content Provenance Specification, Draft 0.3,
+> **Specification document(s):** Content Provenance Specification, Draft 0.4,
 > Sections 3.4 and 10:
-> https://github.com/dkd-dobberkau/content-provenance-spec/blob/draft-0.3/specification.md
+> https://github.com/dkd-dobberkau/content-provenance-spec/blob/draft-0.4/specification.md
 >
 > **Status:** provisional
 >

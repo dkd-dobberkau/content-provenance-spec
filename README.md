@@ -4,12 +4,15 @@ An open, CMS-agnostic specification that lets automated agents and human
 auditors verify who published a piece of web content, when, and on what
 sources.
 
-**Current version: [Draft 0.3](specification.md)** (November 2026). Working
+**Current version: [Draft 0.4](specification.md)** (November 2026). Working
 draft, not stable. Expect breaking changes before 1.0.
 
-Draft 0.3 defines canonicalisation and signing normatively
-([Annex A](specification.md#annex-a-canonicalisation-and-signing-normative)),
-with test vectors and a reference implementation in the
+Draft 0.4 fixes the JSON representation of Records and of the Audit Endpoint
+and makes every conformance level testable. Canonicalisation and signing are
+normative since Draft 0.3
+([Annex A](specification.md#annex-a-canonicalisation-and-signing-normative)).
+Test vectors, reference implementations and a site checker that reports the
+level a site reaches are in the
 [conformance repository](https://github.com/dkd-dobberkau/content-provenance-conformance).
 
 ## The four layers
