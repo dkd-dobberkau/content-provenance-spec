@@ -12,7 +12,7 @@ This is a working draft of an open, CMS-agnostic specification that lets automat
 | Layer 2 now requires verification, not only presence, of signatures | The closed WordPress PR #294 was criticised for shallow cryptographic verification |
 | Canonicalisation must be invisible-byte safe | The same PR injected invisible Unicode bytes that corrupted adjacent plugins |
 | Section 5 adds a mapping to the MX vocabulary | Tom Cranstoun (The Gathering) proposed CPS as the CMS binding profile of MX |
-| Terms that collide with MX are flagged | `lastSubstantiveRevision` vs `maintainedDate`, `conformanceLevel` vs `mxCompliance`, `generator` vs `provenanceOrigin` |
+| Terms that collided with MX are resolved | `maintainedDate` adopted alongside `lastSubstantiveRevision`; `conformanceLevel` renamed to `cpsConformance`; `generator` kept, `provenanceOrigin` documented as the MX counterpart (Section 5.1) |
 | Governance is an explicit open question | Vocabulary stewardship currently rests with one person; signing-identity governance is unresolved |
 
 **Status.** Draft 0.2, November 2026. **Maintainers:** to be decided; initial drafting by dkd Internet Service GmbH, intended stewardship through a neutral body (TYPO3 Association, Open Website Alliance or a new working group). **Reference implementation:** TYPO3 first; Drupal, WordPress and Joomla are the stated follow-on goal.
@@ -46,7 +46,8 @@ Every published Document MUST carry a Provenance Record containing at least:
 - A stable Document identifier that survives URL changes.
 - One or more authors, each identified by a URI (an ORCID, a schema.org/Person profile URL, or an internal user URI exposed by the CMS).
 - The first publication timestamp, immutable after first publication.
-- The last *substantive* revision timestamp, distinct from any technical save or republish.
+- The last *substantive* revision timestamp (`lastSubstantiveRevision`), distinct from any technical save or republish.
+- Optionally the date the content was last confirmed as still accurate (`maintainedDate`, adopted from MX). A confirmation without an edit updates `maintainedDate` only, never `lastSubstantiveRevision`.
 - Optionally a reviewer or approver, identified by URI.
 - A source list; each source has a URL, a human-readable description and an access date.
 - The CMS that produced the Record, by name and version.
@@ -90,7 +91,7 @@ The Endpoint MAY expose Facts as Web Annotations under `/.well-known/content-pro
 
 ## 4 Conformance levels
 
-A site conforms at one of four levels and claims it with a `conformanceLevel` field in the Audit Endpoint and in each Provenance Record.
+A site conforms at one of four levels and claims it with a `cpsConformance` field in the Audit Endpoint and in each Provenance Record.
 
 | Level | Name | Requires |
 | --- | --- | --- |
@@ -112,13 +113,13 @@ A site conforms at one of four levels and claims it with a `conformanceLevel` fi
 
 ### 5.1 MX crosswalk: names to resolve first
 
-These terms mean different things in CPS and MX, or the same thing under two names. They should be settled before any CMS field is fixed, to avoid later migrations.
+These terms meant different things in CPS and MX, or the same thing under two names. They are settled in Draft 0.2 so that CMS fields can be fixed without later migrations.
 
-| CPS | MX | Issue |
-| --- | --- | --- |
-| `lastSubstantiveRevision` | `maintainedDate` | Similar sounding, different semantics |
-| `conformanceLevel` | `mxCompliance` | Format compliance vs editorial truthfulness must stay separate |
-| `generator` | `provenanceOrigin` | Naming ambiguity; to be resolved before the Utrecht statement |
+| CPS | MX | Issue | Resolution |
+| --- | --- | --- | --- |
+| `lastSubstantiveRevision` | `maintainedDate` | Similar sounding, different semantics: last real edit vs last confirmation that the content is still accurate | Both kept. CPS adopts `maintainedDate` from MX as an optional Layer 1 field; merging them would lose information |
+| `cpsConformance` (formerly `conformanceLevel`) | `mxCompliance` | Format compliance vs editorial truthfulness must stay separate | Renamed with a `cps` prefix so the two can never be confused |
+| `generator` | `provenanceOrigin` | Naming ambiguity | `generator` kept, following HTML `meta name="generator"` and Atom. `provenanceOrigin` is the MX counterpart; consumers MAY treat them as equivalent |
 
 The crosswalk compared MX against the TYPO3 implementation described in the PRD, not against this specification text. A direct comparison against this document is still to be done.
 
@@ -157,7 +158,6 @@ Working assumption: apply JCS (JSON Canonicalization Scheme, RFC 8785) to the JS
 - Editor UX expectations for Layer 3.
 - Signing-identity governance: who may hold a Site Key and how a publisher proves it.
 - Vocabulary governance: how the namespace is stewarded beyond a single person, and how it relates to MX under The Gathering.
-- Whether `generator` is renamed or aliased to `provenanceOrigin` (Section 5.1).
 
 ## Annex C: Non-goals
 
