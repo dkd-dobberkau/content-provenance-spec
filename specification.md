@@ -12,6 +12,8 @@ This is a working draft of an open, CMS-agnostic specification that lets automat
 | --- | --- |
 | The MX crosswalk (Section 5.1) no longer treats `generator` and `provenanceOrigin` as equivalent | In the current MX Provenance note `provenanceOrigin` states how content was created, not which system produced it |
 | Section 5.2 lists MX fields without a CPS counterpart | The MX drafts gained fields since Draft 0.2 that overlap with CPS; they are named as open questions rather than adopted silently |
+| Section 3.1 adds the optional members `image`, `video` and `audio` for the media of a Document | Agents could learn who wrote a page but not who made its pictures, under which licence they stand or whether AI produced them; the signature covered an image only through its `alt` text |
+| A media entry carries the SHA-256 of the original file, and Publishers re-issue the Record when a listed file is replaced | Binds the signed Record to the bytes of the files it names; standalone media records are left to a later draft |
 
 ### Changes in Draft 0.4
 
@@ -102,6 +104,26 @@ Records MUST be exposed in the Document as JSON-LD using schema.org plus the nam
 | `cpsConformance` | The level the Document reaches (Section 4) |
 
 Layers 2 and 3 add `contentHash`, `key`, `signature` and `claim`. A Record is **complete** when it has every member of this table that is not marked optional. Timestamps are date-times and dates as defined in RFC 3339.
+
+**Media.** A Record MAY list the media used in the Document in the members `image`, `video` and `audio`, each an array of objects of type `ImageObject`, `VideoObject` or `AudioObject` in the order the media appear. Each medium appears once. An entry has the following properties, each omitted when it is not known; publishers MUST NOT emit empty or guessed values:
+
+| Property | Content |
+| --- | --- |
+| `@id` | A stable identifier of the medium, a URI such as a `urn:uuid`. It survives replacing the file and is never reused for another medium |
+| `contentUrl` | The absolute URL of the original file |
+| `sha256` | SHA-256 over the bytes of the original file, lowercase hexadecimal |
+| `encodingFormat` | The media type of the file |
+| `creator` | An object with `name`; `@type` MAY be omitted when it is not known whether a person or an organisation made the medium |
+| `copyrightNotice` | The copyright notice |
+| `license` | The URL of the licence |
+| `isBasedOn` | The URL the medium was taken from |
+| `digitalSourceType` | How the medium came to exist, as a term IRI of the [IPTC Digital Source Type](https://cv.iptc.org/newscodes/digitalsourcetype/) vocabulary |
+
+Media members are not part of completeness: a Record is complete without them and with incomplete entries, and missing media data MUST NOT lower the level a Document reaches.
+
+`sha256` is computed over the original file as published at `contentUrl` at the time of signing. Verifiers MUST NOT expect a differently sized or converted variant served in the page to match it. Publishers MUST re-issue the Record when a listed file is replaced, so the signed hash matches the file at `contentUrl`.
+
+Because the media members are part of the Record, the Layer 2 signature covers them (Annex A.4) and binds the Document to the hashes of the original files. The `alt` text of an image remains part of the canonical text (Annex A.2.3). A record per medium that can be verified without the Document, for example a medium found elsewhere and looked up by its hash, is left to a later draft.
 
 ### 3.2 Layer 2: Signature
 
@@ -222,7 +244,7 @@ Levels are cumulative: a Document reaches a level only if it also meets every lo
 | Standard | Relationship |
 | --- | --- |
 | schema.org | Extended, not replaced. Records map to Article, CreativeWork, Person and, where applicable, Claim |
-| C2PA (content credentials, originally for images) | Informs the signature layer; manifests are not required. A future profile MAY define manifest emission for text |
+| C2PA (content credentials, originally for images) | Informs the signature layer; manifests are not required. Media entries (Section 3.1) state origin, licence and hash of a file without a manifest; a future profile MAY reference existing C2PA manifests and define manifest emission for text |
 | W3C Web Annotations | Canonical external representation of Facts (Layer 3) |
 | W3C DID and Verifiable Credentials | Site Keys MAY be expressed as DIDs; not required at this stage |
 | Sitemaps protocol | Complemented, not replaced, by the Audit Endpoint |
@@ -250,6 +272,8 @@ These MX fields have no counterpart in this specification. None is adopted yet; 
 | `reviewCycle` | How often the content is reviewed (`quarterly`, `on-change` …); with `maintainedDate` it lets agents spot stale content | Complements `maintainedDate`, which CPS already adopts |
 | `provenanceUri`, hosted `.mxprov.json` record | Link to a separate record of the parties, regulatory frameworks and steps behind a document, aimed at AI governance | Different scope from the CPS Record, which states authorship, dates and sources and is signed with the text. A CPS Record could link such a record; the two are not merged |
 | `canonicalUri`, `summary`, `conformsTo`, `trainingDataPolicy` | The four fields MX requires at its Level 2, carried in HTML as `<meta name="mx:…">` | `canonicalUri` equals the Document URL, `conformsTo` can name this specification. `summary` and `trainingDataPolicy` have no CPS source. Emitting them is a CMS matter, not part of the Record or its signature |
+
+MX carries media metadata in the file (XMP, Carrier Formats §3.5) or in a sidecar file (`.mx.yaml`, §3.7), and derives an IPTC `digitalSourceType` from its AI Usage Declaration. Both are compatible with the media entries of Section 3.1, which use the same IPTC vocabulary; a CMS can emit both from the same metadata. Neither is adopted.
 
 MX signs contracts over a fingerprint of its own (canonical JSON, SHA-256; signature algorithm left open). It has not been compared byte for byte with the canonicalisation in Annex A.
 
